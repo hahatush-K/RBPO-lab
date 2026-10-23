@@ -1,6 +1,6 @@
 spring:
   application:
-    name: rbpo-2026
+    name: 24030
   config:
     import: optional:file:.env[.properties]
   datasource:
