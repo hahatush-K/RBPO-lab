@@ -1,0 +1,2319 @@
+{
+  "info": {
+    "name": "Курьерская доставка (вариант 8)",
+    "description": "Запустите приложение, затем выполните папки по порядку (Run collection): сначала CRUD, затем сценарий бизнес-операций. Перед первым запуском инициализируйте БД (профиль db-init), чтобы сценарий работал на чистых данных.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Текущая дата берётся на стороне клиента только для подготовки тестовых данных;",
+          "// сервер при выполнении операций использует собственное время.",
+          "const pad = n => String(n).padStart(2, '0');",
+          "const fmt = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());",
+          "const d = new Date();",
+          "pm.collectionVariables.set('today', fmt(d));",
+          "d.setDate(d.getDate() + 1);",
+          "pm.collectionVariables.set('tomorrow', fmt(d));"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "1. CRUD по каждой сущности",
+      "item": [
+        {
+          "name": "Пользователи /api/users",
+          "item": [
+            {
+              "name": "Создать пользователя",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/users",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "users"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"CRUD Пользователь\",\n  \"email\": \"crud-{{$guid}}@example.com\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.collectionVariables.set(\"crudUserId\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Список пользователей",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/users",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "users"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Получить пользователя",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/users/{{crudUserId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "users",
+                    "{{crudUserId}}"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Изменить пользователя",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/users/{{crudUserId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "users",
+                    "{{crudUserId}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"CRUD Пользователь (изм.)\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"name = CRUD Пользователь (изм.)\", function () { pm.expect(pm.response.json().name).to.eql(\"CRUD \\u041f\\u043e\\u043b\\u044c\\u0437\\u043e\\u0432\\u0430\\u0442\\u0435\\u043b\\u044c (\\u0438\\u0437\\u043c.)\"); });"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Отправления /api/shipments",
+          "item": [
+            {
+              "name": "Создать отправление",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipments"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"senderId\": \"{{crudUserId}}\",\n  \"address\": \"Москва, Тверская 1\",\n  \"mass\": 3.5\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.test(\"status = NEW\", function () { pm.expect(pm.response.json().status).to.eql(\"NEW\"); });",
+                      "pm.collectionVariables.set(\"crudShipmentId\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Список отправлений",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipments"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Получить отправление",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipments/{{crudShipmentId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipments",
+                    "{{crudShipmentId}}"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Изменить отправление",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipments/{{crudShipmentId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipments",
+                    "{{crudShipmentId}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"address\": \"Москва, Арбат 10\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"address = Москва, Арбат 10\", function () { pm.expect(pm.response.json().address).to.eql(\"\\u041c\\u043e\\u0441\\u043a\\u0432\\u0430, \\u0410\\u0440\\u0431\\u0430\\u0442 10\"); });"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Маршруты /api/routes",
+          "item": [
+            {
+              "name": "Создать маршрут",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/routes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "routes"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"date\": \"{{tomorrow}}\",\n  \"maxMass\": 50\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.test(\"status = PLANNED\", function () { pm.expect(pm.response.json().status).to.eql(\"PLANNED\"); });",
+                      "pm.collectionVariables.set(\"crudRouteId\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Список маршрутов",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/routes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "routes"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Получить маршрут",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/routes/{{crudRouteId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "routes",
+                    "{{crudRouteId}}"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Изменить маршрут",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/routes/{{crudRouteId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "routes",
+                    "{{crudRouteId}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"maxMass\": 60\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Остановки /api/stops",
+          "item": [
+            {
+              "name": "Создать остановку",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/stops",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "stops"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"routeId\": \"{{crudRouteId}}\",\n  \"address\": \"Москва, Арбат 10\",\n  \"orderNumber\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.collectionVariables.set(\"crudStopId\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Список остановок",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/stops",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "stops"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Получить остановку",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/stops/{{crudStopId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "stops",
+                    "{{crudStopId}}"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Изменить остановку",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/stops/{{crudStopId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "stops",
+                    "{{crudStopId}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"orderNumber\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"orderNumber = 2\", function () { pm.expect(pm.response.json().orderNumber).to.eql(2); });"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Назначения /api/shipment-assignments",
+          "item": [
+            {
+              "name": "Создать назначение",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipment-assignments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipment-assignments"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"shipmentId\": \"{{crudShipmentId}}\",\n  \"stopId\": \"{{crudStopId}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.test(\"status = PENDING\", function () { pm.expect(pm.response.json().status).to.eql(\"PENDING\"); });",
+                      "pm.collectionVariables.set(\"crudAssignmentId\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Список назначений",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipment-assignments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipment-assignments"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Получить назначение",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipment-assignments/{{crudAssignmentId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipment-assignments",
+                    "{{crudAssignmentId}}"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Изменить назначение",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipment-assignments/{{crudAssignmentId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipment-assignments",
+                    "{{crudAssignmentId}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"CANCELLED\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"status = CANCELLED\", function () { pm.expect(pm.response.json().status).to.eql(\"CANCELLED\"); });"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Удаление (в обратном порядке)",
+          "item": [
+            {
+              "name": "Удалить назначение",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipment-assignments/{{crudAssignmentId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipment-assignments",
+                    "{{crudAssignmentId}}"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 204\", function () { pm.response.to.have.status(204); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Удалить остановку",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/stops/{{crudStopId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "stops",
+                    "{{crudStopId}}"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 204\", function () { pm.response.to.have.status(204); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Удалить маршрут",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/routes/{{crudRouteId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "routes",
+                    "{{crudRouteId}}"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 204\", function () { pm.response.to.have.status(204); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Удалить отправление",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipments/{{crudShipmentId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipments",
+                    "{{crudShipmentId}}"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 204\", function () { pm.response.to.have.status(204); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Удалить пользователя",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/users/{{crudUserId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "users",
+                    "{{crudUserId}}"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 204\", function () { pm.response.to.have.status(204); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Удалённый пользователь не найден",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/users/{{crudUserId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "users",
+                    "{{crudUserId}}"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 404\", function () { pm.response.to.have.status(404); });"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Сценарий бизнес-операций",
+      "item": [
+        {
+          "name": "Подготовка данных",
+          "item": [
+            {
+              "name": "Пользователь-отправитель",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/users",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "users"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Сценарий Отправитель\",\n  \"email\": \"scenario-{{$guid}}@example.com\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.collectionVariables.set(\"scUserId\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Отправление A (5 кг)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipments"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"senderId\": \"{{scUserId}}\",\n  \"address\": \"Москва, Тверская 1\",\n  \"mass\": 5\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.test(\"status = NEW\", function () { pm.expect(pm.response.json().status).to.eql(\"NEW\"); });",
+                      "pm.collectionVariables.set(\"scShipA\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Отправление B (8 кг)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipments"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"senderId\": \"{{scUserId}}\",\n  \"address\": \"Москва, Арбат 10\",\n  \"mass\": 8\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.collectionVariables.set(\"scShipB\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Отправление C (10 кг)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipments"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"senderId\": \"{{scUserId}}\",\n  \"address\": \"Москва, Арбат 10\",\n  \"mass\": 10\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.collectionVariables.set(\"scShipC\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Маршрут на сегодня (лимит 15 кг)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/routes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "routes"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"date\": \"{{today}}\",\n  \"maxMass\": 15\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.test(\"status = PLANNED\", function () { pm.expect(pm.response.json().status).to.eql(\"PLANNED\"); });",
+                      "pm.collectionVariables.set(\"scRouteToday\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Остановка 1 сегодняшнего маршрута",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/stops",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "stops"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"routeId\": \"{{scRouteToday}}\",\n  \"address\": \"Москва, Тверская 1\",\n  \"orderNumber\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.collectionVariables.set(\"scStop1\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Остановка 2 сегодняшнего маршрута",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/stops",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "stops"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"routeId\": \"{{scRouteToday}}\",\n  \"address\": \"Москва, Арбат 10\",\n  \"orderNumber\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.collectionVariables.set(\"scStop2\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Маршрут на завтра (лимит 100 кг)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/routes",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "routes"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"date\": \"{{tomorrow}}\",\n  \"maxMass\": 100\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.collectionVariables.set(\"scRouteTomorrow\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Остановка завтрашнего маршрута",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/stops",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "stops"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"routeId\": \"{{scRouteTomorrow}}\",\n  \"address\": \"Москва, Ленинский пр. 5\",\n  \"orderNumber\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.collectionVariables.set(\"scStopTomorrow\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Операция 1. Назначить отправление на остановку",
+          "item": [
+            {
+              "name": "Назначить A на остановку 1 (ок)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipments/{{scShipA}}/assign",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipments",
+                    "{{scShipA}}",
+                    "assign"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"stopId\": \"{{scStop1}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.test(\"status = PENDING\", function () { pm.expect(pm.response.json().status).to.eql(\"PENDING\"); });",
+                      "pm.collectionVariables.set(\"scAssignA\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Отправление A стало ASSIGNED",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipments/{{scShipA}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipments",
+                    "{{scShipA}}"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"status = ASSIGNED\", function () { pm.expect(pm.response.json().status).to.eql(\"ASSIGNED\"); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Назначить B на остановку 2 (ок, 5+8=13 из 15)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipments/{{scShipB}}/assign",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipments",
+                    "{{scShipB}}",
+                    "assign"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"stopId\": \"{{scStop2}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.collectionVariables.set(\"scAssignB\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Назначить C (409: 13+10 > 15 кг)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipments/{{scShipC}}/assign",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipments",
+                    "{{scShipC}}",
+                    "assign"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"stopId\": \"{{scStop2}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 409\", function () { pm.response.to.have.status(409); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Назначить A повторно (409: уже ASSIGNED)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipments/{{scShipA}}/assign",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipments",
+                    "{{scShipA}}",
+                    "assign"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"stopId\": \"{{scStop2}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 409\", function () { pm.response.to.have.status(409); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Назначить на несуществующую остановку (404)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipments/{{scShipC}}/assign",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipments",
+                    "{{scShipC}}",
+                    "assign"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"stopId\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 404\", function () { pm.response.to.have.status(404); });"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Операция 2. Снять назначение",
+          "item": [
+            {
+              "name": "Снять назначение B (ок)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipment-assignments/{{scAssignB}}/unassign",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipment-assignments",
+                    "{{scAssignB}}",
+                    "unassign"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"status = CANCELLED\", function () { pm.expect(pm.response.json().status).to.eql(\"CANCELLED\"); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Отправление B снова NEW",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipments/{{scShipB}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipments",
+                    "{{scShipB}}"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"status = NEW\", function () { pm.expect(pm.response.json().status).to.eql(\"NEW\"); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Снять назначение B повторно (409)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipment-assignments/{{scAssignB}}/unassign",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipment-assignments",
+                    "{{scAssignB}}",
+                    "unassign"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 409\", function () { pm.response.to.have.status(409); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Назначить C (ок: освободилось место, 5+10=15 из 15)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipments/{{scShipC}}/assign",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipments",
+                    "{{scShipC}}",
+                    "assign"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"stopId\": \"{{scStop2}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.collectionVariables.set(\"scAssignC\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Операция 3. Начать маршрут",
+          "item": [
+            {
+              "name": "Начать завтрашний маршрут (409: дата в будущем)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/routes/{{scRouteTomorrow}}/start",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "routes",
+                    "{{scRouteTomorrow}}",
+                    "start"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 409\", function () { pm.response.to.have.status(409); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Начать сегодняшний маршрут (ок)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/routes/{{scRouteToday}}/start",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "routes",
+                    "{{scRouteToday}}",
+                    "start"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"status = IN_PROGRESS\", function () { pm.expect(pm.response.json().status).to.eql(\"IN_PROGRESS\"); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Отправление A стало IN_TRANSIT",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipments/{{scShipA}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipments",
+                    "{{scShipA}}"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"status = IN_TRANSIT\", function () { pm.expect(pm.response.json().status).to.eql(\"IN_TRANSIT\"); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Снять назначение A (409: маршрут уже идёт)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipment-assignments/{{scAssignA}}/unassign",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipment-assignments",
+                    "{{scAssignA}}",
+                    "unassign"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 409\", function () { pm.response.to.have.status(409); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Отменить идущий маршрут (409)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/routes/{{scRouteToday}}/cancel",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "routes",
+                    "{{scRouteToday}}",
+                    "cancel"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 409\", function () { pm.response.to.have.status(409); });"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Операция 4. Отметить доставку",
+          "item": [
+            {
+              "name": "Доставить A (ок)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipment-assignments/{{scAssignA}}/deliver",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipment-assignments",
+                    "{{scAssignA}}",
+                    "deliver"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"status = DELIVERED\", function () { pm.expect(pm.response.json().status).to.eql(\"DELIVERED\"); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Маршрут ещё IN_PROGRESS (C не доставлено)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/routes/{{scRouteToday}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "routes",
+                    "{{scRouteToday}}"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"status = IN_PROGRESS\", function () { pm.expect(pm.response.json().status).to.eql(\"IN_PROGRESS\"); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Доставить A повторно (409)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipment-assignments/{{scAssignA}}/deliver",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipment-assignments",
+                    "{{scAssignA}}",
+                    "deliver"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 409\", function () { pm.response.to.have.status(409); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Доставить C (ок)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipment-assignments/{{scAssignC}}/deliver",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipment-assignments",
+                    "{{scAssignC}}",
+                    "deliver"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Маршрут автоматически COMPLETED",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/routes/{{scRouteToday}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "routes",
+                    "{{scRouteToday}}"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"status = COMPLETED\", function () { pm.expect(pm.response.json().status).to.eql(\"COMPLETED\"); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Отправление C DELIVERED",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipments/{{scShipC}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipments",
+                    "{{scShipC}}"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"status = DELIVERED\", function () { pm.expect(pm.response.json().status).to.eql(\"DELIVERED\"); });"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Операция 5. Отменить маршрут",
+          "item": [
+            {
+              "name": "Назначить B на завтрашний маршрут (ок)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipments/{{scShipB}}/assign",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipments",
+                    "{{scShipB}}",
+                    "assign"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"stopId\": \"{{scStopTomorrow}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.collectionVariables.set(\"scAssignB2\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Отменить завтрашний маршрут (ок)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/routes/{{scRouteTomorrow}}/cancel",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "routes",
+                    "{{scRouteTomorrow}}",
+                    "cancel"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"status = CANCELLED\", function () { pm.expect(pm.response.json().status).to.eql(\"CANCELLED\"); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Отправление B вернулось в NEW",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipments/{{scShipB}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipments",
+                    "{{scShipB}}"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"status = NEW\", function () { pm.expect(pm.response.json().status).to.eql(\"NEW\"); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Назначение B на отменённом маршруте CANCELLED",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipment-assignments/{{scAssignB2}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipment-assignments",
+                    "{{scAssignB2}}"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"status = CANCELLED\", function () { pm.expect(pm.response.json().status).to.eql(\"CANCELLED\"); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Начать отменённый маршрут (409)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/routes/{{scRouteTomorrow}}/start",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "routes",
+                    "{{scRouteTomorrow}}",
+                    "start"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 409\", function () { pm.response.to.have.status(409); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Назначить на отменённый маршрут (409)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/shipments/{{scShipB}}/assign",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "shipments",
+                    "{{scShipB}}",
+                    "assign"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"stopId\": \"{{scStopTomorrow}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Код ответа 409\", function () { pm.response.to.have.status(409); });"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
